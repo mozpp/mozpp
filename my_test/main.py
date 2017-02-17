@@ -17,7 +17,9 @@ cudnn.benchmark=True
 
 #continune trainning?
 #resume=False
+epoch_start=0
 resume='/media/b3-542/Library/pytorch/my_test/model_epoch_1000.pth'
+
 
 print('===> Loading datasets')
 train_set = get_training_set()
@@ -26,8 +28,12 @@ print('===> Building model')
 model = Net()
 
 if resume:
+        resume_list = resume.split('_')
+        len(resume_list)
+        epoch_start = resume_list[len(resume_list) - 1].split('.pth')[0]
+        epoch_start=int(epoch_start)
         if os.path.isfile(resume):
-            print("=> loading checkpoint '{}'".format(resume))
+            print("=> loading checkpoint '{}',epoch:{}".format(resume,epoch_start))
             checkpoint = torch.load(resume)
             #start_epoch = checkpoint['epoch']
             #best_prec1 = checkpoint['best_prec1']
@@ -40,7 +46,7 @@ if resume:
 criterion = nn.MSELoss()
 
 #if cuda:
-model = model.cuda()
+model = torch.nn.DataParallel(model).cuda()
 criterion = criterion.cuda()
 
 optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -61,10 +67,10 @@ def train(epoch):
 
         #print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch, iteration, len(training_data_loader), loss.data[0]))
 
-    print("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch, epoch_loss / len(training_data_loader)))
+    print("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch+epoch_start, epoch_loss / len(training_data_loader)))
 
 def checkpoint(epoch):
-    model_out_path = "model_epoch_{}.pth".format(epoch)
+    model_out_path = "model_epoch_{}.pth".format(epoch+epoch_start)
     torch.save(model, model_out_path)
     print("Checkpoint saved to {}".format(model_out_path))
 
